@@ -39,9 +39,6 @@ int main() {
         cmsg->cmsg_level = SOL_SOCKET;
         cmsg->cmsg_type = SCM_RIGHTS;
 
-        int* fdptr = (int*)CMSG_DATA(cmsg);
-        *fdptr = 1;
-
         if (sendmsg(clientSockd, &message, 0) == -1) {
             perror("sendmsg");
             exit(EXIT_FAILURE);
