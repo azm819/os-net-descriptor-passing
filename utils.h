@@ -1,5 +1,5 @@
-#ifndef OS_NET_UTILS_H
-#define OS_NET_UTILS_H
+#ifndef OS_NET_DESCRIPTOR_PASSING_UTILS_H
+#define OS_NET_DESCRIPTOR_PASSING_UTILS_H
 
 #include <unistd.h>
 #include <stdlib.h>
@@ -55,5 +55,4 @@ int createSocket() {
     }
     return sockfd;
 }
-
-#endif //OS_NET_UTILS_H
+#endif //OS_NET_DESCRIPTOR_PASSING_UTILS_H
