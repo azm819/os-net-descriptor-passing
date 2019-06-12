@@ -1,25 +1,38 @@
 #include "utils.h"
 
-using namespace std;
 
 int main() {
     int sockfd = createSocket();
+    auto address = genAddrStruct();
 
-    auto serv_addr = genStructFields("./socket");
-    if (connect(sockfd, (struct sockaddr *) &serv_addr.second, sizeof(struct sockaddr_un)) == -1) {
-        perror("connect");
-        exit(EXIT_FAILURE);
+    if (connect(sockfd, (struct sockaddr*)&address, sizeof(struct sockaddr_un)) == -1)
+        printError("connect");
+
+    char id[bufferLen];
+    cout << "Enter ID\n";
+    cin >> id;
+
+    auto msg = genMsgStruct();
+    if (recvmsg(sockfd, &msg, 0) == -1)
+        printError("recvmsg");
+
+    struct cmsghdr* cmsg = CMSG_FIRSTHDR(&msg);
+    int* fd = (int*)CMSG_DATA(cmsg);
+    dup2(*fd, 1);
+
+    cout << id << " connected.\n";
+    while (true) {
+        char message[bufferLen];
+        cin >> message;
+        if (strcmp(message, "exit") == 0) {
+            cout << id << " disconnected.\n";
+            break;
+        }
+        cout << id << ": " << message << '\n';
     }
 
-    auto message = genMsgFields();
+    if (close(sockfd) == -1)
+        printError("close");
 
-    if (recvmsg(sockfd, &message, 0) == -1) {
-        perror("recvmsg");
-        exit(EXIT_FAILURE);
-    }
-
-    struct cmsghdr *cmsg = CMSG_FIRSTHDR(&message);
-    dup2(*(int*)CMSG_DATA(cmsg), 1);
-
-    return closeSocket(sockfd);
+    return 0;
 }
