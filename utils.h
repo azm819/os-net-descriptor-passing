@@ -1,59 +1,59 @@
 #ifndef OS_NET_UTILS_H
 #define OS_NET_UTILS_H
 
+#include <unistd.h>
+#include <stdlib.h>
+#include <fcntl.h>
+#include <sys/socket.h>
+#include <sys/un.h>
+#include <sys/stat.h>
+#include <errno.h>
+#include <string.h>
+#include <stdio.h>
+#include <stdint.h>
+#include <string>
 #include <iostream>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <cstring>
-#include <unistd.h>
-#include <sys/un.h>
-#include <sys/un.h>
-#include <sys/socket.h>
-#include <unistd.h>
+
+using std::cout;
+using std::cin;
+
+#define SERVER_INFO cout << "Server: "
 
 const size_t bufferLen = 1024;
+const char *socketName = "./socket";
 
-int closeSocket(int socket) {
-    if (close(socket) == -1) {
-        perror("close");
-        return 1;
-    }
-    return 0;
+msghdr genMsgStruct() {
+    struct msghdr msg = {0};
+    char buf[CMSG_SPACE(sizeof(int))], dup[bufferLen];
+    memset(buf, '\0', sizeof(buf));
+    struct iovec io = {.iov_base = &dup, .iov_len = sizeof(dup)};
+
+    msg.msg_iov = &io;
+    msg.msg_iovlen = 1;
+    msg.msg_control = buf;
+    msg.msg_controllen = sizeof(buf);
+    return msg;
 }
 
-msghdr genMsgFields() {
-    char duff[bufferLen];
-    struct iovec io = {
-            io.iov_base = &duff,
-            io.iov_len = bufferLen};
+sockaddr_un genAddrStruct() {
+    struct sockaddr_un addr;
+    memset(&addr, 0, sizeof(struct sockaddr_un));
+    addr.sun_family = AF_UNIX;
+    strncpy(addr.sun_path, socketName, sizeof(addr.sun_path) - 1);
+    return addr;
+}
 
-    struct msghdr message;
-    char buff[CMSG_SPACE(sizeof(int))];
-    bzero(buff, sizeof(buff));
-    message.msg_iov = &io;
-    message.msg_iovlen = 1;
-    message.msg_control = buff;
-    message.msg_controllen = sizeof(buff);
-    return message;
+void printError(const char *message) {
+    perror(message);
+    exit(EXIT_FAILURE);
 }
 
 int createSocket() {
     int sockfd;
     if ((sockfd = socket(AF_UNIX, SOCK_STREAM, 0)) == -1) {
-        perror("socket");
-        exit(EXIT_FAILURE);
+        printError("Failed to create socket");
     }
     return sockfd;
-}
-
-
-std::pair<socklen_t, sockaddr_un> genStructFields(const char *socketName) {
-    struct sockaddr_un address;
-    memset(&address, 0, sizeof(struct sockaddr_un));
-    address.sun_family = AF_UNIX;
-    strncpy(address.sun_path, socketName, sizeof(address.sun_path) - 1);
-    return {sizeof(address), address};
 }
 
 #endif //OS_NET_UTILS_H
